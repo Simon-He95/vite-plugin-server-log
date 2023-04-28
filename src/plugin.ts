@@ -1,4 +1,5 @@
-import type { Plugin, HmrContext } from 'vite'
+import type { HmrContext, Plugin } from 'vite'
+import colors from 'picocolors'
 
 export function vitePluginServerLog(): Plugin {
   let hmrContext: HmrContext
@@ -9,31 +10,28 @@ export function vitePluginServerLog(): Plugin {
     handleHotUpdate(ctx) {
       hmrContext = ctx
     },
-    configureServer({ watcher, printUrls, config }) {
-      watcher.on('all', (_, file) => {
-        const queue = config.plugins.map(plugin => (plugin.handleHotUpdate && hmrContext ? (plugin as any).handleHotUpdate(hmrContext) : Promise.resolve()))
-        Promise.all(queue).then((fullModules) => {
-          const filteredModules = fullModules.filter((item) => item && item.length)
-          if (filteredModules.length || hmrContext?.modules.length) {
-            // hmr update
-            config.logger.info('')
-            printUrls()
-          }
-
-          if (!hmrContext?.modules.length) {
-            if (file.endsWith('.vue')) {
-              // page reload
-              const envInfo = Object.keys(config.env).filter(item => item.startsWith(viteTag)).map(key => {
-                return `${key}: ${config.env[key]}`
-              }).join('; ')
-              config.logger.info(`🚀 ~ mode: ${config.mode}; env: { ${envInfo} }\n`)
-              printUrls()
-            }
-          }
-        })
+    configureServer({ watcher, config }) {
+      watcher.on('all', () => {
+        if (!hmrContext.modules.length)
+          return
+        const envInfo = Object.keys(config.env)
+          .filter(item => item.startsWith(viteTag))
+          .map((key) => {
+            return `${colors.blue(key)}: ${colors.magenta(config.env[key])}`
+          })
+          .join('; ')
+        const right = colors.green('➜')
+        config.logger.info(
+          `  ${right}  ${colors.dim('mode:')}  ${colors.magenta(config.mode)}`,
+        )
+        config.logger.info(`  ${right}  ${colors.dim('env:')}  { ${envInfo} }`)
+        const link = `http://127.0.0.1:${config.server.port}/`
+        const serverInfo = `  ${right}  Local:   ${colors.cyan(link)}
+  ${right}  ${colors.dim('Network: use')} --host ${colors.dim('to expose')}
+  ${right}  ${colors.dim('press')} h ${colors.dim('to show help')}
+  `
+        config.logger.info(serverInfo)
       })
-    }
+    },
   }
 }
-
-
