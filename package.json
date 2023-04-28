@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-server-log",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "packageManager": "pnpm@7.18.2",
   "description": "vite-plugin-server-log",
   "author": "Simon He",
